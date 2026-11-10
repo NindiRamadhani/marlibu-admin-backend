@@ -31,26 +31,27 @@ export const authMiddleware: RequestHandler = (
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({
       success: false,
-      message: 'Authentication token is required.',
+      message: 'Token autentikasi diperlukan.',
     });
     return;
   }
 
   const token = authHeader.split(' ')[1];
-  const jwtSecret = process.env.JWT_SECRET;
 
   if (!token) {
     res.status(401).json({
       success: false,
-      message: 'Invalid authentication token.',
+      message: 'Token tidak valid.',
     });
     return;
   }
 
+  const jwtSecret = process.env.JWT_SECRET;
+
   if (!jwtSecret) {
     res.status(500).json({
       success: false,
-      message: 'JWT secret is not configured.',
+      message: 'JWT_SECRET belum dikonfigurasi.',
     });
     return;
   }
@@ -62,11 +63,13 @@ export const authMiddleware: RequestHandler = (
       typeof decoded === 'string' ||
       typeof decoded.id !== 'number' ||
       typeof decoded.email !== 'string' ||
-      !['admin', 'staff', 'user'].includes(decoded.role as string)
+      !['admin', 'staff', 'user'].includes(
+        decoded.role as string
+      )
     ) {
       res.status(401).json({
         success: false,
-        message: 'Invalid token payload.',
+        message: 'Payload token tidak valid.',
       });
       return;
     }
@@ -78,10 +81,11 @@ export const authMiddleware: RequestHandler = (
     };
 
     next();
-  } catch {
+
+  } catch (error) {
     res.status(401).json({
       success: false,
-      message: 'Invalid or expired token.',
+      message: 'Token tidak valid atau sudah kedaluwarsa.',
     });
   }
 };
