@@ -2,19 +2,19 @@ import pool from '../config/db';
 
 export interface RefundItem {
   id?: number;
-  idBooking: string;
-  nama: string;
-  bank: string;
-  rekening: string;
-  email: string;
-  telepon: string;
-  tglPengajuan: string;
-  alasan: string;
-  catatan?: string;
-  hargaAsli: number;
-  potongan: number;
-  nominalRefund: number;
-  status: 'Proses' | 'Selesai' | 'Ditolak';
+  refund_code?: string;
+  booking_id: number;
+  payment_id?: number | null;
+  requested_amount: number;
+  deduction_amount?: number;
+  refund_amount: number;
+  reason: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'processed';
+  admin_note?: string;
+  processed_by?: number | null;
 }
 
 export class RefundModel {
@@ -28,32 +28,33 @@ export class RefundModel {
     return rows.length ? (rows[0] as RefundItem) : null;
   }
 
-  static async create(data: Omit<RefundItem, 'id'>) {
+  static async create(data: Omit<RefundItem, 'id' | 'created_at' | 'updated_at'>) {
     const query = `
       INSERT INTO refunds 
-      (idBooking, nama, bank, rekening, email, telepon, tglPengajuan, alasan, catatan, hargaAsli, potongan, nominalRefund, status) 
+      (refund_code, booking_id, payment_id, requested_amount, deduction_amount, refund_amount, reason, bank_name, bank_account_number, bank_account_name, status, admin_note, processed_by) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const [result] = await pool.query(query, [
-      data.idBooking,
-      data.nama,
-      data.bank,
-      data.rekening,
-      data.email,
-      data.telepon,
-      data.tglPengajuan,
-      data.alasan,
-      data.catatan || '',
-      data.hargaAsli,
-      data.potongan,
-      data.nominalRefund,
-      data.status || 'Proses',
+      data.refund_code || `REF-${Date.now()}`,
+      data.booking_id,
+      data.payment_id || null,
+      data.requested_amount,
+      data.deduction_amount || 0,
+      data.refund_amount,
+      data.reason,
+      data.bank_name || null,
+      data.bank_account_number || null,
+      data.bank_account_name || null,
+      data.status || 'pending',
+      data.admin_note || null,
+      data.processed_by || null,
     ]);
     return result;
   }
 
-  static async updateStatus(id: number, status: 'Proses' | 'Selesai' | 'Ditolak') {
-    const [result] = await pool.query('UPDATE refunds SET status = ? WHERE id = ?', [status, id]);
+  static async updateStatus(id: number, status: 'pending' | 'approved' | 'rejected' | 'processed', admin_note?: string) {
+    const query = `UPDATE refunds SET status = ?, admin_note = ? WHERE id = ?`;
+    const [result] = await pool.query(query, [status, admin_note || null, id]);
     return result;
   }
 }
