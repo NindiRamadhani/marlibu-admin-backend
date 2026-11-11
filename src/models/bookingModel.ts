@@ -1,61 +1,105 @@
 
 import pool from '../config/db';
 
-export interface Booking {
-  id?: number;
-  idBooking: string;
-  customerId: number;
-  tglBooking: string;
-  totalBayar: number;
-  status: string;
-}
-
 export class BookingModel {
-  // Mengambil semua data booking
+  // Mengambil semua booking beserta informasi pelanggan,
+  // jadwal, rute, dan armada.
   static async getAll() {
-    const [rows] = await pool.query(
-      'SELECT * FROM bookings ORDER BY id DESC'
-    );
+    const [rows] = await pool.query(`
+      SELECT
+        b.id,
+        b.booking_code,
+        b.customer_id,
+        b.schedule_id,
+        b.booking_datetime,
+        b.passenger_count,
+        b.ticket_price,
+        b.subtotal,
+        b.discount_amount,
+        b.total_amount,
+        b.booking_status,
+        b.notes,
+
+        c.name AS customer_name,
+        c.email AS customer_email,
+        c.phone AS customer_phone,
+
+        s.schedule_code,
+        s.departure_datetime,
+        s.arrival_datetime,
+
+        r.origin_city,
+        r.destination_city,
+
+        t.vehicle_name,
+        t.vehicle_type,
+        t.plate_number
+
+      FROM bookings b
+      LEFT JOIN customers c ON b.customer_id = c.id
+      LEFT JOIN schedules s ON b.schedule_id = s.id
+      LEFT JOIN routes r ON s.route_id = r.id
+      LEFT JOIN transports t ON s.transport_id = t.id
+
+      ORDER BY b.id DESC
+    `);
 
     return rows;
   }
 
-  // Mengambil detail booking berdasarkan ID
-  static async getById(id: number) {
-    const [rows]: any = await pool.query(
-      'SELECT * FROM bookings WHERE id = ?',
-      [id]
-    );
+  // Mengambil detail berdasarkan kode booking.
+  static async getByBookingCode(bookingCode: string) {
+    const [rows]: any = await pool.query(`
+      SELECT
+        b.id,
+        b.booking_code,
+        b.customer_id,
+        b.schedule_id,
+        b.booking_datetime,
+        b.passenger_count,
+        b.ticket_price,
+        b.subtotal,
+        b.discount_amount,
+        b.total_amount,
+        b.booking_status,
+        b.notes,
+
+        c.name AS customer_name,
+        c.email AS customer_email,
+        c.phone AS customer_phone,
+
+        s.schedule_code,
+        s.departure_datetime,
+        s.arrival_datetime,
+
+        r.origin_city,
+        r.destination_city,
+
+        t.vehicle_name,
+        t.vehicle_type,
+        t.plate_number
+
+      FROM bookings b
+      LEFT JOIN customers c ON b.customer_id = c.id
+      LEFT JOIN schedules s ON b.schedule_id = s.id
+      LEFT JOIN routes r ON s.route_id = r.id
+      LEFT JOIN transports t ON s.transport_id = t.id
+
+      WHERE b.booking_code = ?
+      LIMIT 1
+    `, [bookingCode]);
 
     return rows.length ? rows[0] : null;
   }
 
-  // Menambahkan data booking baru
-  static async create(data: Omit<Booking, 'id'>) {
-    const [result] = await pool.query(
-      `INSERT INTO bookings
-      (idBooking, customerId, tglBooking, totalBayar, status)
-      VALUES (?, ?, ?, ?, ?)`,
-      [
-        data.idBooking,
-        data.customerId,
-        data.tglBooking,
-        data.totalBayar,
-        data.status
-      ]
-    );
-
-    return result;
-  }
-
-  // Mengubah status booking
+  // Mengubah status berdasarkan kode booking.
   static async updateStatus(
-    id: number,
+    bookingCode: string,
     status: string
   ): Promise<boolean> {
     const [result]: any = await pool.query(
-      'UPDATE bookings SET status = ? WHERE id = ?',
-      [status, id]
+      'UPDATE bookings SET booking_status = ? WHERE booking_code = ?',
+      [status, bookingCode]
     );
 
     return result.affectedRows > 0;
