@@ -1,15 +1,29 @@
+
 import { Router } from 'express';
-import { RouteModel } from '../models/routeModel';
+
+import {
+  getAllRoutes,
+  getRouteById,
+  createRoute,
+  updateRoute,
+  deleteRoute,
+} from '../controllers/routeController';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  try {
-    const routes = await RouteModel.getAll();
-    res.json({ success: true, data: routes });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Gagal memuat data rute perjalanan', error });
-  }
-});
+// GET: Semua data rute
+router.get('/', getAllRoutes);
+
+// GET: Detail rute berdasarkan ID
+router.get('/:id', getRouteById);
+
+// POST: Tambah rute
+router.post('/', createRoute);
+
+// PUT: Edit rute
+router.put('/:id', updateRoute);
+
+// DELETE: Hapus rute
+router.delete('/:id', deleteRoute);
 
 export default router;
