@@ -1,15 +1,29 @@
+
 import { Router } from 'express';
-import { TransportModel } from '../models/transportModel';
+
+import {
+  getAllTransports,
+  getTransportById,
+  createTransport,
+  updateTransport,
+  deleteTransport,
+} from '../controllers/transportController';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  try {
-    const transports = await TransportModel.getAll();
-    res.json({ success: true, data: transports });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Gagal memuat data transportasi', error });
-  }
-});
+// GET semua transportasi
+router.get('/', getAllTransports);
+
+// GET detail transportasi
+router.get('/:id', getTransportById);
+
+// POST menambahkan transportasi
+router.post('/', createTransport);
+
+// PUT memperbarui transportasi
+router.put('/:id', updateTransport);
+
+// DELETE menghapus transportasi
+router.delete('/:id', deleteTransport);
 
 export default router;
