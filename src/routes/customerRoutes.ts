@@ -1,12 +1,20 @@
+
 import { Router } from 'express';
+import {
+  getAllCustomers,
+  getCustomerById,
+  deleteCustomer,
+} from '../controllers/customerController';
 
 const router = Router();
 
-router.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Customer API is running!',
-  });
-});
+// GET: Mengambil seluruh data pelanggan
+router.get('/', getAllCustomers);
+
+// GET: Mengambil detail pelanggan berdasarkan ID
+router.get('/:id', getCustomerById);
+
+// DELETE: Menghapus data pelanggan
+router.delete('/:id', deleteCustomer);
 
 export default router;
