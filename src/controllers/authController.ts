@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import pool from '../config/db';
 import bcrypt from 'bcryptjs';
@@ -115,7 +114,6 @@ export const login = async (
     });
   } catch (error) {
     console.error('Login error:', error);
-
     res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan server.',
@@ -151,7 +149,6 @@ export const googleLogin = async (
       return;
     }
 
-    // Verifikasi token langsung ke Google
     const ticket = await googleClient.verifyIdToken({
       idToken,
       audience: clientId,
@@ -173,7 +170,6 @@ export const googleLogin = async (
 
     const email = payload.email.trim().toLowerCase();
 
-    // Periksa akun berdasarkan database
     const [rows]: any = await pool.query(
       `SELECT id, name, email, role, is_active
        FROM users
@@ -208,7 +204,6 @@ export const googleLogin = async (
       return;
     }
 
-    // Buat JWT backend
     const token = jwt.sign(
       {
         id: Number(user.id),
@@ -240,10 +235,89 @@ export const googleLogin = async (
     });
   } catch (error) {
     console.error('Google Login error:', error);
-
     res.status(401).json({
       success: false,
       message: 'Verifikasi Google gagal.',
+    });
+  }
+};
+
+
+// GANTI PASSWORD
+export const changePassword = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { oldPassword, newPassword } = req.body;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Unauthorized. Token tidak valid atau sesi habis.',
+      });
+      return;
+    }
+
+    if (!oldPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Password lama dan password baru wajib diisi.',
+      });
+      return;
+    }
+
+    const [rows]: any = await pool.query(
+      'SELECT id, password_hash FROM users WHERE id = ? LIMIT 1',
+      [userId]
+    );
+
+    if (!rows.length) {
+      res.status(404).json({
+        success: false,
+        message: 'User tidak ditemukan di database.',
+      });
+      return;
+    }
+
+    const user = rows[0];
+
+    if (!user.password_hash) {
+      res.status(400).json({
+        success: false,
+        message: 'Akun ini menggunakan Google Login dan tidak memiliki password.',
+      });
+      return;
+    }
+
+    const passwordMatch = await bcrypt.compare(oldPassword, user.password_hash);
+
+    if (!passwordMatch) {
+      res.status(401).json({
+        success: false,
+        message: 'Password lama salah.',
+      });
+      return;
+    }
+
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    await pool.query(
+      'UPDATE users SET password_hash = ? WHERE id = ?',
+      [newPasswordHash, user.id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Password berhasil diubah di database.',
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Terjadi kesalahan server saat mengubah password.',
     });
   }
 };

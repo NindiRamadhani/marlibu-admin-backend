@@ -1,13 +1,15 @@
 import pool from '../config/db';
 
-export class SettingModel {
-  static async getSettings() {
-    const [rows]: any = await pool.query('SELECT * FROM settings LIMIT 1');
-    return rows.length ? rows[0] : null;
-  }
+export class UserModel {
+    // Cari user berdasarkan ID
+    static async findById(id: number) {
+        const [rows]: any = await pool.query('SELECT * FROM id, username, password FROM users WHERE id = ?', [id]);
+        return rows[0];
+    }
 
-  static async updateSettings(id: number, data: any) {
-    const [result] = await pool.query('UPDATE settings SET ? WHERE id = ?', [data, id]);
-    return result;
-  }
+    // Update password baru (pastikan sudah di-hash pakai bcrypt di controller)
+    static async updatePassword(id: number, hashedPassword: string) {
+        const [result] = await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+        return result;
+    }
 }
