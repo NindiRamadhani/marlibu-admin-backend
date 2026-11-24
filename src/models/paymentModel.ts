@@ -1,4 +1,3 @@
-
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import pool from '../config/db';
 
@@ -15,6 +14,15 @@ export interface PaymentRow extends RowDataPacket {
   verified_by: number | null;
   verified_at: string | null;
   admin_note: string | null;
+  booking_code?: string | null;
+  customer_name?: string | null;
+  customer_email?: string | null;
+  customer_phone?: string | null;
+  schedule_code?: string | null;
+  departure_datetime?: string | null;
+  arrival_datetime?: string | null;
+  origin_city?: string | null;
+  destination_city?: string | null;
 }
 
 export interface CreatePaymentData {
@@ -35,16 +43,57 @@ export interface CreatePaymentData {
 
 export class PaymentModel {
   static async getAll(): Promise<PaymentRow[]> {
-    const [rows] = await pool.query<PaymentRow[]>(
-      'SELECT * FROM payments ORDER BY id DESC'
-    );
+    const [rows] = await pool.query<PaymentRow[]>(`
+      SELECT
+        p.*,
+        b.booking_code,
+        b.customer_id,
+        b.schedule_id,
+        b.booking_status,
+        c.name AS customer_name,
+        c.email AS customer_email,
+        c.phone AS customer_phone,
+        s.schedule_code,
+        s.departure_datetime,
+        s.arrival_datetime,
+        r.origin_city,
+        r.destination_city
+      FROM payments p
+      LEFT JOIN bookings b ON p.booking_id = b.id
+      LEFT JOIN customers c ON b.customer_id = c.id
+      LEFT JOIN schedules s ON b.schedule_id = s.id
+      LEFT JOIN routes r ON s.route_id = r.id
+      ORDER BY p.id DESC
+    `);
 
     return rows;
   }
 
   static async getById(id: number): Promise<PaymentRow | null> {
     const [rows] = await pool.query<PaymentRow[]>(
-      'SELECT * FROM payments WHERE id = ? LIMIT 1',
+      `
+      SELECT
+        p.*,
+        b.booking_code,
+        b.customer_id,
+        b.schedule_id,
+        b.booking_status,
+        c.name AS customer_name,
+        c.email AS customer_email,
+        c.phone AS customer_phone,
+        s.schedule_code,
+        s.departure_datetime,
+        s.arrival_datetime,
+        r.origin_city,
+        r.destination_city
+      FROM payments p
+      LEFT JOIN bookings b ON p.booking_id = b.id
+      LEFT JOIN customers c ON b.customer_id = c.id
+      LEFT JOIN schedules s ON b.schedule_id = s.id
+      LEFT JOIN routes r ON s.route_id = r.id
+      WHERE p.id = ?
+      LIMIT 1
+      `,
       [id]
     );
 
