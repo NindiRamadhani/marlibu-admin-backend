@@ -1,20 +1,25 @@
 
 import { Router } from 'express';
+
 import {
   getAllCustomers,
   getCustomerById,
+  createCustomer,
   deleteCustomer,
 } from '../controllers/customerController';
 
 const router = Router();
 
-// GET: Mengambil seluruh data pelanggan
+// GET semua pelanggan
 router.get('/', getAllCustomers);
 
-// GET: Mengambil detail pelanggan berdasarkan ID
+// POST tambah pelanggan
+router.post('/', createCustomer);
+
+// GET detail pelanggan
 router.get('/:id', getCustomerById);
 
-// DELETE: Menghapus data pelanggan
+// DELETE pelanggan
 router.delete('/:id', deleteCustomer);
 
 export default router;

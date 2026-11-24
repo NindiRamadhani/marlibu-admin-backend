@@ -1,5 +1,6 @@
 
 import pool from '../config/db';
+import { randomBytes } from 'crypto';
 
 export interface BookingHistory {
   idBooking: string;
@@ -31,6 +32,8 @@ function mapBookingStatus(status: string): BookingHistory['status'] {
 }
 
 export class CustomerModel {
+
+  // MENGAMBIL SEMUA DATA PELANGGAN
   static async getAll(): Promise<Customer[]> {
     const [customerRows]: any = await pool.query(`
       SELECT
@@ -81,6 +84,7 @@ export class CustomerModel {
     }));
   }
 
+  // MENGAMBIL DETAIL PELANGGAN BERDASARKAN ID
   static async getById(id: number): Promise<Customer | null> {
     const customers = await this.getAll();
 
@@ -89,9 +93,39 @@ export class CustomerModel {
     ) || null;
   }
 
+  // MENAMBAHKAN DATA PELANGGAN
+  static async create(data: {
+    nama: string;
+    email: string;
+    telepon: string;
+  }): Promise<number> {
+
+    const customerCode =
+      `CUST-${Date.now()}-${randomBytes(3).toString('hex')}`;
+
+    const [result]: any = await pool.query(
+      `INSERT INTO customers
+        (customer_code, name, email, phone)
+       VALUES (?, ?, ?, ?)`,
+      [
+        customerCode,
+        data.nama,
+        data.email,
+        data.telepon,
+      ]
+    );
+
+    return result.insertId;
+  }
+
+  // MENGHAPUS DATA PELANGGAN
   static async delete(id: number): Promise<boolean> {
+
+    // CEK APAKAH PELANGGAN MASIH MEMILIKI BOOKING
     const [bookingRows]: any = await pool.query(
-      'SELECT COUNT(*) AS total FROM bookings WHERE customer_id = ?',
+      `SELECT COUNT(*) AS total
+       FROM bookings
+       WHERE customer_id = ?`,
       [id]
     );
 
@@ -99,6 +133,7 @@ export class CustomerModel {
       throw new Error('CUSTOMER_HAS_BOOKINGS');
     }
 
+    // HAPUS PELANGGAN DARI DATABASE
     const [result]: any = await pool.query(
       'DELETE FROM customers WHERE id = ?',
       [id]

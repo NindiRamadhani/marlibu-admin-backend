@@ -2,10 +2,8 @@
 import { Request, Response } from 'express';
 import { CustomerModel } from '../models/customerModel';
 
-export const getAllCustomers = async (
-  req: Request,
-  res: Response
-) => {
+// GET SEMUA PELANGGAN
+export const getAllCustomers = async (req: Request, res: Response) => {
   try {
     const customers = await CustomerModel.getAll();
 
@@ -24,10 +22,8 @@ export const getAllCustomers = async (
   }
 };
 
-export const getCustomerById = async (
-  req: Request,
-  res: Response
-) => {
+// GET DETAIL PELANGGAN
+export const getCustomerById = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
 
@@ -61,10 +57,60 @@ export const getCustomerById = async (
   }
 };
 
-export const deleteCustomer = async (
-  req: Request,
-  res: Response
-) => {
+// POST TAMBAH PELANGGAN
+export const createCustomer = async (req: Request, res: Response) => {
+  try {
+    const { nama, email, telepon } = req.body;
+
+    if (
+      typeof nama !== 'string' || !nama.trim() ||
+      typeof email !== 'string' || !email.trim() ||
+      typeof telepon !== 'string' || !telepon.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nama, email, dan telepon wajib diisi',
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email.trim())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format email tidak valid',
+      });
+    }
+
+    const id = await CustomerModel.create({
+      nama: nama.trim(),
+      email: email.trim(),
+      telepon: telepon.trim(),
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Pelanggan berhasil ditambahkan',
+      data: {
+        id,
+        nama: nama.trim(),
+        email: email.trim(),
+        telepon: telepon.trim(),
+      },
+    });
+  } catch (error: any) {
+    console.error('Create customer error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Gagal menambahkan pelanggan',
+      error: error.message,
+    });
+  }
+};
+
+// DELETE PELANGGAN
+export const deleteCustomer = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
 
